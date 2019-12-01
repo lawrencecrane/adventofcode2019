@@ -9,6 +9,14 @@ import (
 )
 
 func main() {
+	sum_part_one := solve(FuelCounterUpper)
+	fmt.Printf("Answer for Part 1: %d\n", sum_part_one)
+
+	sum_part_two := solve(AdditionalFuelCounterUpper)
+	fmt.Printf("Answer for Part 2: %d\n", sum_part_two)
+}
+
+func solve(fun func(int) int) int {
 	f, err := os.Open("input")
 
 	check(err)
@@ -20,14 +28,20 @@ func main() {
 
 	for scanner.Scan() {
 		x, _ := strconv.ParseInt(scanner.Text(), 10, 64)
-		sum += FuelCounterUpper(int(x))
+		sum += fun(int(x))
 	}
 
-	fmt.Printf("Answer for Part 1: %d\n", sum)
+	return sum
 }
 
 func AdditionalFuelCounterUpper(mass int) int {
-	return 0
+	fuel := FuelCounterUpper(mass)
+
+	if fuel <= 0 {
+		return 0
+	}
+
+	return fuel + AdditionalFuelCounterUpper(fuel)
 }
 
 func FuelCounterUpper(mass int) int {
