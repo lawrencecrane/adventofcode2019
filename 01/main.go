@@ -11,17 +11,8 @@ import (
 func main() {
 	fmt.Printf("Answer for Part 1: %d\n", solve(FuelCounterUpper))
 
-	fmt.Printf("Answer for Part 2 (via iteration): %d\n",
-		solve(AdditionalFuelCounterUpperIterative))
-
-	fmt.Printf("Answer for Part 2 (via recursion): %d\n",
+	fmt.Printf("Answer for Part 2: %d\n",
 		solve(AdditionalFuelCounterUpperRecursive))
-
-	fmt.Printf("Answer for Part 2 (via tail recursion): %d\n",
-		solve(AdditionalFuelCounterUpperTailRecursive))
-
-	fmt.Printf("Answer for Part 2 (via tail recursive channel): %d\n",
-		solveViaChannel(AdditionalFuelCounterUpperTailRecursiveChannel))
 }
 
 func solveViaChannel(fun func(int, int, chan int)) int {
