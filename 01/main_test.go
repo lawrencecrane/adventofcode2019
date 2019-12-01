@@ -17,7 +17,7 @@ func FuelCounterUpperTestHelper(t *testing.T, x, expected int) {
 }
 
 func AdditionalFuelCounterUpperTestHelper(t *testing.T, x, expected int) {
-	Helper(t, AdditionalFuelCounterUpper, x, expected)
+	Helper(t, AdditionalFuelCounterUpperRecursive, x, expected)
 }
 
 func TestFuelCounterUpper(t *testing.T) {
