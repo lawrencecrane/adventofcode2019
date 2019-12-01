@@ -1,8 +1,12 @@
 package main
 
+import (
+	"math"
+)
+
 func main() {
 }
 
-func FuelCounterUpper(x int) int {
-	return 0
+func FuelCounterUpper(mass int) int {
+	return int(math.Floor(float64(mass)/3)) - 2
 }
