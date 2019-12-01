@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math/rand"
 	"testing"
 )
 
@@ -33,18 +34,43 @@ func TestAdditionalFuelCounterUpper(t *testing.T) {
 	AdditionalFuelCounterUpperTestHelper(t, 100756, 50346)
 }
 
+var DATA = get_random_dataset()
+
+func benchmark(fun func(int) int) {
+	for _, value := range DATA {
+		fun(value)
+	}
+}
+
 func BenchmarkSolveIterative(b *testing.B) {
-	solve(AdditionalFuelCounterUpperIterative)
+	benchmark(AdditionalFuelCounterUpperIterative)
 }
 
 func BenchmarkSolveRecursive(b *testing.B) {
-	solve(AdditionalFuelCounterUpperRecursive)
+	benchmark(AdditionalFuelCounterUpperRecursive)
 }
 
 func BenchmarkSolveTailRecursive(b *testing.B) {
-	solve(AdditionalFuelCounterUpperTailRecursive)
+	benchmark(AdditionalFuelCounterUpperTailRecursive)
 }
 
 func BenchmarkSolveChannel(b *testing.B) {
-	solveViaChannel(AdditionalFuelCounterUpperTailRecursiveChannel)
+	for _, value := range DATA {
+		res := make(chan int)
+		AdditionalFuelCounterUpperTailRecursiveChannel(value, 0, res)
+	}
+}
+
+func get_random_dataset() [10000]int {
+	var data [10000]int
+
+	for key, _ := range data {
+		data[key] = random(1000000, 10000000)
+	}
+
+	return data
+}
+
+func random(min, max int) int {
+	return min + rand.Intn(max-min)
 }
