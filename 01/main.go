@@ -26,6 +26,10 @@ func main() {
 	fmt.Printf("Answer for Part 1: %d\n", sum)
 }
 
+func AdditionalFuelCounterUpper(mass int) int {
+	return 0
+}
+
 func FuelCounterUpper(mass int) int {
 	return int(math.Floor(float64(mass)/3)) - 2
 }
