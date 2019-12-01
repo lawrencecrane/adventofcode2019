@@ -41,6 +41,10 @@ func BenchmarkSolveRecursive(b *testing.B) {
 	solve(AdditionalFuelCounterUpperRecursive)
 }
 
+func BenchmarkSolveTailRecursive(b *testing.B) {
+	solve(AdditionalFuelCounterUpperTailRecursive)
+}
+
 func BenchmarkSolveChannel(b *testing.B) {
-	solveViaChannel(AdditionalFuelCounterUpperChannel)
+	solveViaChannel(AdditionalFuelCounterUpperTailRecursiveChannel)
 }

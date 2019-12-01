@@ -9,17 +9,19 @@ import (
 )
 
 func main() {
-	sum_part_one := solve(FuelCounterUpper)
-	fmt.Printf("Answer for Part 1: %d\n", sum_part_one)
+	fmt.Printf("Answer for Part 1: %d\n", solve(FuelCounterUpper))
 
-	sum_part_two := solve(AdditionalFuelCounterUpperRecursive)
-	fmt.Printf("Answer for Part 2 (via recursion): %d\n", sum_part_two)
+	fmt.Printf("Answer for Part 2 (via iteration): %d\n",
+		solve(AdditionalFuelCounterUpperIterative))
 
-	sum_part_two_b := solveViaChannel(AdditionalFuelCounterUpperChannel)
-	fmt.Printf("Answer for Part 2 (via channel): %d\n", sum_part_two_b)
+	fmt.Printf("Answer for Part 2 (via recursion): %d\n",
+		solve(AdditionalFuelCounterUpperRecursive))
 
-	sum_part_two_c := solve(AdditionalFuelCounterUpperIterative)
-	fmt.Printf("Answer for Part 2 (via iterative): %d\n", sum_part_two_c)
+	fmt.Printf("Answer for Part 2 (via tail recursion): %d\n",
+		solve(AdditionalFuelCounterUpperTailRecursive))
+
+	fmt.Printf("Answer for Part 2 (via tail recursive channel): %d\n",
+		solveViaChannel(AdditionalFuelCounterUpperTailRecursiveChannel))
 }
 
 func solveViaChannel(fun func(int, int, chan int)) int {
@@ -73,7 +75,7 @@ func AdditionalFuelCounterUpperIterative(mass int) int {
 	return total
 }
 
-func AdditionalFuelCounterUpperChannel(mass int, total int, result chan int) {
+func AdditionalFuelCounterUpperTailRecursiveChannel(mass int, total int, result chan int) {
 	fuel := FuelCounterUpper(mass)
 
 	if fuel <= 0 {
@@ -81,7 +83,21 @@ func AdditionalFuelCounterUpperChannel(mass int, total int, result chan int) {
 		return
 	}
 
-	go AdditionalFuelCounterUpperChannel(fuel, total+fuel, result)
+	go AdditionalFuelCounterUpperTailRecursiveChannel(fuel, total+fuel, result)
+}
+
+func AdditionalFuelCounterUpperTailRecursive(mass int) int {
+	return AdditionalFuelCounterUpperTailRecursiveHelper(mass, 0)
+}
+
+func AdditionalFuelCounterUpperTailRecursiveHelper(mass int, total int) int {
+	fuel := FuelCounterUpper(mass)
+
+	if fuel <= 0 {
+		return total
+	}
+
+	return AdditionalFuelCounterUpperTailRecursiveHelper(fuel, total+fuel)
 }
 
 func AdditionalFuelCounterUpperRecursive(mass int) int {
