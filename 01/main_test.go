@@ -32,3 +32,15 @@ func TestAdditionalFuelCounterUpper(t *testing.T) {
 	AdditionalFuelCounterUpperTestHelper(t, 1969, 966)
 	AdditionalFuelCounterUpperTestHelper(t, 100756, 50346)
 }
+
+func BenchmarkSolveIterative(b *testing.B) {
+	solve(AdditionalFuelCounterUpperIterative)
+}
+
+func BenchmarkSolveRecursive(b *testing.B) {
+	solve(AdditionalFuelCounterUpperRecursive)
+}
+
+func BenchmarkSolveChannel(b *testing.B) {
+	solveViaChannel(AdditionalFuelCounterUpperChannel)
+}

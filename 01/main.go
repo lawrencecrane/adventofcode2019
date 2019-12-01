@@ -15,14 +15,14 @@ func main() {
 	sum_part_two := solve(AdditionalFuelCounterUpperRecursive)
 	fmt.Printf("Answer for Part 2 (via recursion): %d\n", sum_part_two)
 
-	sum_part_two_b := solve_via_channel(AdditionalFuelCounterUpperChannel)
+	sum_part_two_b := solveViaChannel(AdditionalFuelCounterUpperChannel)
 	fmt.Printf("Answer for Part 2 (via channel): %d\n", sum_part_two_b)
 
 	sum_part_two_c := solve(AdditionalFuelCounterUpperIterative)
 	fmt.Printf("Answer for Part 2 (via iterative): %d\n", sum_part_two_c)
 }
 
-func solve_via_channel(fun func(int, int, chan int)) int {
+func solveViaChannel(fun func(int, int, chan int)) int {
 	f, err := os.Open("input")
 
 	check(err)
