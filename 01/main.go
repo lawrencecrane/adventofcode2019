@@ -13,10 +13,13 @@ func main() {
 	fmt.Printf("Answer for Part 1: %d\n", sum_part_one)
 
 	sum_part_two := solve(AdditionalFuelCounterUpperRecursive)
-	fmt.Printf("Answer for Part 2: %d\n", sum_part_two)
+	fmt.Printf("Answer for Part 2 (via recursion): %d\n", sum_part_two)
 
 	sum_part_two_b := solve_via_channel(AdditionalFuelCounterUpperChannel)
 	fmt.Printf("Answer for Part 2 (via channel): %d\n", sum_part_two_b)
+
+	sum_part_two_c := solve(AdditionalFuelCounterUpperIterative)
+	fmt.Printf("Answer for Part 2 (via iterative): %d\n", sum_part_two_c)
 }
 
 func solve_via_channel(fun func(int, int, chan int)) int {
@@ -57,6 +60,17 @@ func solve(fun func(int) int) int {
 	}
 
 	return sum
+}
+
+func AdditionalFuelCounterUpperIterative(mass int) int {
+	total := 0
+
+	for fuel := FuelCounterUpper(mass); fuel > 0; {
+		total += fuel
+		fuel = FuelCounterUpper(fuel)
+	}
+
+	return total
 }
 
 func AdditionalFuelCounterUpperChannel(mass int, total int, result chan int) {
