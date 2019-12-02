@@ -12,6 +12,10 @@ func main() {
 	fmt.Printf("Answer to Part 1: %d\n", input(solve)[0])
 }
 
+func findInputPair(stack []int, output int) (int, int) {
+	return 0, 0
+}
+
 func solve(in string) []int {
 	stack := parse(split(in))
 	return execWithNoMutation(stack, 12, 2)
