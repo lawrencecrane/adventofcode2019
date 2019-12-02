@@ -14,11 +14,17 @@ func main() {
 
 func solve(in string) []int {
 	stack := parse(split(in))
+	return execWithNoMutation(stack, 12, 2)
+}
 
-	stack[1] = 12
-	stack[2] = 2
+func execWithNoMutation(stack []int, noun, verb int) []int {
+	copied := make([]int, len(stack))
+	copy(copied, stack)
 
-	return exec(stack)
+	copied[1] = noun
+	copied[2] = verb
+
+	return exec(copied)
 }
 
 func exec(stack []int) []int {

@@ -11,6 +11,15 @@ func TestExec(t *testing.T) {
 	Helper(t, exec, []int{1, 1, 1, 4, 99, 5, 6, 0, 99}, []int{30, 1, 1, 4, 2, 5, 6, 0, 99})
 }
 
+func TestExecWithNoMutation(t *testing.T) {
+	stack := []int{1, 0, 0, 0, 99}
+	execWithNoMutation(stack, 0, 0)
+
+	if !Equal(stack, []int{1, 0, 0, 0, 99}) {
+		t.Error("Exec mutates stack")
+	}
+}
+
 func Helper(t *testing.T, f func([]int) []int, x, expected []int) {
 	ans := f(x)
 
