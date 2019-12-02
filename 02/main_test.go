@@ -9,6 +9,7 @@ func TestExec(t *testing.T) {
 	ExecTestHelper(t, []int{2, 3, 0, 3, 99}, []int{2, 3, 0, 6, 99})
 	ExecTestHelper(t, []int{2, 4, 4, 5, 99, 0}, []int{2, 4, 4, 5, 99, 9801})
 	ExecTestHelper(t, []int{1, 1, 1, 4, 99, 5, 6, 0, 99}, []int{30, 1, 1, 4, 2, 5, 6, 0, 99})
+	ExecTestHelper(t, []int{1, 0, 0, 4, 99, 5, 6, 0, 99}, []int{30, 0, 0, 4, 2, 5, 6, 0, 99})
 }
 
 func TestExecWithNoMutation(t *testing.T) {
@@ -21,11 +22,15 @@ func TestExecWithNoMutation(t *testing.T) {
 }
 
 func TestFindInputPair(t *testing.T) {
-	FindInputPairTestHelper(t, []int{1, 1, 1, 4, 99, 5, 6, 0, 99}, 30, 1, 1)
+	FindInputPairTestHelper(t, []int{1, 1, 1, 4, 99, 5, 6, 0, 99}, 30, 0, 0)
 }
 
 func FindInputPairTestHelper(t *testing.T, stack []int, output, exnoun, exverb int) {
-	noun, verb := findInputPair(stack, output)
+	noun, verb, err := findInputPair(stack, output)
+
+	if err != nil {
+		t.Error("Could not find input pair")
+	}
 
 	if noun != exnoun || verb != exverb {
 		t.Errorf("Expected (%d, %d), Got (%d, %d)", exnoun, exverb, noun, verb)
@@ -33,7 +38,7 @@ func FindInputPairTestHelper(t *testing.T, stack []int, output, exnoun, exverb i
 }
 
 func ExecTestHelper(t *testing.T, x, expected []int) {
-	ans := exec(x)
+	ans, _ := exec(x)
 
 	if !Equal(ans, expected) {
 		t.Errorf("Expected %v, Got %v", expected, ans)
