@@ -9,7 +9,7 @@ fn main() {
     let a = wires.pop().unwrap();
     let b = wires.pop().unwrap();
 
-    println!("Answer to Part 1 {}", find_closest(a, b));
+    println!("Answer to Part 1 {}", find_closest(&a, &b));
 }
 
 type Wire = Vec<Path>;
@@ -29,10 +29,23 @@ enum DIRECTION {
 
 type Point = (isize, isize);
 
-fn find_closest(a: Wire, b: Wire) -> isize {
+fn find_closest(a: &Wire, b: &Wire) -> isize {
+    find_all_intersections(a, b).iter()
+        .fold(None, |min, (x, y)| {
+        let sum = x.abs() + y.abs();
+
+        match min {
+            Some(value) if sum < value => Some(sum),
+            None => Some(sum),
+            _ => min
+        }
+    }).unwrap()
+}
+
+fn find_all_intersections(a: &Wire, b: &Wire) -> Vec<Point> {
     let (horizontal, vertical) = split_wire(&b);
 
-    let intersections = a.iter()
+    a.iter()
         .fold(Vec::new(), |mut xs, path| {
             match path.direction {
                 DIRECTION::HORIZONTAL => {
@@ -48,17 +61,7 @@ fn find_closest(a: Wire, b: Wire) -> isize {
             };
 
             xs
-        });
-
-    intersections.iter().fold(None, |min, (x, y)| {
-        let sum = x.abs() + y.abs();
-
-        match min {
-            Some(value) if sum < value => Some(sum),
-            None => Some(sum),
-            _ => min
-        }
-    }).unwrap()
+        })
 }
 
 fn find_intersections(path: &Path,
@@ -193,6 +196,6 @@ mod tests {
         let a = as_wire(vec!["R8","U5","L5","D3"]);
         let b = as_wire(vec!["U7","R6","D4","L4"]);
 
-        assert_eq!(find_closest(a, b), 6);
+        assert_eq!(find_closest(&a, &b), 6);
     }
 }
