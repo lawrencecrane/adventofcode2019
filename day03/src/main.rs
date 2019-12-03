@@ -4,7 +4,12 @@ use std::io::BufReader;
 use std::io::prelude::*;
 
 fn main() {
-    input()
+    let mut wires = input();
+
+    let a = wires.pop().unwrap();
+    let b = wires.pop().unwrap();
+
+    println!("Answer to Part 1 {}", find_closest(a, b));
 }
 
 type Wire = Vec<Path>;
@@ -24,7 +29,7 @@ enum DIRECTION {
 
 type Point = (isize, isize);
 
-fn solve(a: Wire, b: Wire) {
+fn find_closest(a: Wire, b: Wire) -> isize {
     let (horizontal, vertical) = split_wire(&b);
 
     let intersections = a.iter()
@@ -45,7 +50,15 @@ fn solve(a: Wire, b: Wire) {
             xs
         });
 
-    println!("{:?}", intersections);
+    intersections.iter().fold(None, |min, (x, y)| {
+        let sum = x.abs() + y.abs();
+
+        match min {
+            Some(value) if sum < value => Some(sum),
+            None => Some(sum),
+            _ => min
+        }
+    }).unwrap()
 }
 
 fn find_intersections(path: &Path,
@@ -101,8 +114,7 @@ fn split_wire(wire: &Wire) -> (HashMap<isize, Vec<&Path>>, HashMap<isize, Vec<&P
 fn as_wire(input: Vec<&str>) -> Wire {
     let (_, paths) = input.iter()
         .fold(((0, 0), Vec::new()), |(prev, mut paths), x| {
-            let path = as_path(x, prev);
-            let point = path.to;
+            let (path, point) = as_path(x, prev);
 
             paths.push(path);
 
@@ -112,36 +124,52 @@ fn as_wire(input: Vec<&str>) -> Wire {
     paths
 }
 
-fn as_path(input: &str, from: Point) -> Path {
+fn as_path(input: &str, from: Point) -> (Path, Point) {
     let (dir, val) = input.split_at(1);
     let value = val.parse::<isize>().unwrap();
 
     match dir {
-        "U" => Path {
-            from: from,
-            to: (from.0, from.1 + value),
-            direction: DIRECTION::VERTICAL
+        "U" =>  {
+            let to = (from.0, from.1 + value);
+
+            (Path {
+                from: from,
+                to: to,
+                direction: DIRECTION::VERTICAL
+            }, to)
         },
-        "R" => Path {
-            from: from,
-            to: (from.0 + value, from.1),
-            direction: DIRECTION::HORIZONTAL
+        "R" => {
+            let to = (from.0 + value, from.1);
+
+            (Path {
+                from: from,
+                to: to,
+                direction: DIRECTION::HORIZONTAL
+            }, to)
         },
-        "D" => Path {
-            from: (from.0, from.1 - value),
-            to: from,
-            direction: DIRECTION::VERTICAL
+        "D" => {
+            let to = (from.0, from.1 - value);
+
+            (Path {
+                from: to,
+                to: from,
+                direction: DIRECTION::VERTICAL
+            }, to)
         },
-        "L" => Path {
-            from: (from.0 - value, from.1),
-            to: from,
-            direction: DIRECTION::HORIZONTAL
+        "L" => {
+            let to = (from.0 - value, from.1);
+
+            (Path {
+                from: to,
+                to: from,
+                direction: DIRECTION::HORIZONTAL
+            }, to)
         },
         _ => panic!("Unknown direction")
     }
 }
 
-fn input() {
+fn input() -> Vec<Wire> {
     let f = File::open("data/input").unwrap();
     let f = BufReader::new(f);
 
@@ -153,9 +181,18 @@ fn input() {
         wires.push(as_wire(input));
     }
 
-    let a = wires.pop().unwrap();
-    let b = wires.pop().unwrap();
-
-    solve(a, b);
+    wires
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_find_closest() {
+        let a = as_wire(vec!["R8","U5","L5","D3"]);
+        let b = as_wire(vec!["U7","R6","D4","L4"]);
+
+        assert_eq!(find_closest(a, b), 6);
+    }
+}
