@@ -1,15 +1,15 @@
 fn main() {
     let (from, to) = parse("137683-596253").unwrap();
-    println!("Answer to Part 1 {}", bruteforce(from, to));
+    println!("Answer to Part 1 {}", bruteforce_part_1(from, to));
 }
 
-fn bruteforce(from: usize, to: usize) -> usize {
+fn bruteforce_part_1(from: usize, to: usize) -> usize {
     (from..to)
-        .filter(is_valid)
+        .filter(is_valid_part_1)
         .count()
 }
 
-fn is_valid(pw: &usize) -> bool {
+fn is_valid_part_1(pw: &usize) -> bool {
     let (_, valid, same) = get_six_digits(pw).iter()
         .fold((0, true, false), |(prev, valid, same), x| {
             (*x, *x >= prev && valid, *x == prev || same)
