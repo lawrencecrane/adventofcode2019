@@ -72,13 +72,13 @@ func execHelper(stack []int, pos int, output []int) ([]int, int, []int, error) {
 
 	switch opcode {
 	case ADD:
-		stack, output := calc(stack, addTrailingZeros(modes, 3-len(modes)), output, pos, add)
+		stack := calc(stack, addTrailingZeros(modes, 3-len(modes)), pos, add)
 		return execHelper(stack, pos+4, output)
 	case MULTIPLY:
-		stack, output := calc(stack, addTrailingZeros(modes, 3-len(modes)), output, pos, mult)
+		stack := calc(stack, addTrailingZeros(modes, 3-len(modes)), pos, mult)
 		return execHelper(stack, pos+4, output)
 	case OUTPUT:
-		stack, output := out(stack, addTrailingZeros(modes, 1-len(modes)), output, pos)
+		output := out(stack, addTrailingZeros(modes, 1-len(modes)), output, pos)
 		return execHelper(stack, pos+2, output)
 	case HALT:
 		return stack, pos, output, nil
@@ -87,21 +87,21 @@ func execHelper(stack []int, pos int, output []int) ([]int, int, []int, error) {
 	}
 }
 
-func calc(stack []int, modes []int, output []int, pos int, f func(int, int) int) ([]int, []int) {
+func calc(stack []int, modes []int, pos int, f func(int, int) int) []int {
 	f_fst, _ := modeToFunc(modes[0])
 	f_snd, _ := modeToFunc(modes[1])
 	res := f(f_fst(stack, pos+1), f_snd(stack, pos+2))
 
 	positionModeWrite(stack, pos+3, res)
 
-	return stack, output
+	return stack
 }
 
-func out(stack []int, modes []int, output []int, pos int) ([]int, []int) {
+func out(stack []int, modes []int, output []int, pos int) []int {
 	fun, _ := modeToFunc(modes[0])
 
 	output = append(output, fun(stack, pos+1))
-	return stack, output
+	return output
 }
 
 func add(a, b int) int {
