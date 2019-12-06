@@ -8,6 +8,12 @@ fn main() {
     println!("{:?}", map);
 }
 
+fn direct_orbit_count(map: &HashMap<String, Vec<String>>) -> usize {
+    map.iter()
+        .map(|(_, val)| val.len())
+        .sum()
+}
+
 fn add_to_orbit_map(map: &mut HashMap<String, Vec<String>>,
                     child: &str,
                     parent: &str) {
@@ -40,4 +46,23 @@ fn input(parser: &dyn Fn(String, &mut HashMap<String, Vec<String>>))
     }
 
     map
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_direct_orbit_count() {
+        let data = ["COM)B", "B)C", "C)D", "D)E", "E)F",
+            "B)G", "G)H", "D)I", "E)J", "J)K","K)L"];
+
+        let mut map = HashMap::new();
+
+        for val in data.iter() {
+            parse(String::from(*val), &mut map);
+        }
+
+        assert_eq!(direct_orbit_count(&map), 11)
+    }
 }
