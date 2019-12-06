@@ -4,28 +4,21 @@ import (
 	"testing"
 )
 
-func TestExec(t *testing.T) {
-	ExecTestHelper(t, []int{1, 0, 0, 0, 99}, []int{2, 0, 0, 0, 99})
-	ExecTestHelper(t, []int{2, 3, 0, 3, 99}, []int{2, 3, 0, 6, 99})
-	ExecTestHelper(t, []int{2, 4, 4, 5, 99, 0}, []int{2, 4, 4, 5, 99, 9801})
-	ExecTestHelper(t, []int{1, 1, 1, 4, 99, 5, 6, 0, 99}, []int{30, 1, 1, 4, 2, 5, 6, 0, 99})
-	ExecTestHelper(t, []int{1, 0, 0, 4, 99, 5, 6, 0, 99}, []int{30, 0, 0, 4, 2, 5, 6, 0, 99})
+func TestParseInstruction(t *testing.T) {
+	ParseInstructionTestHelper(t, 1234, 34, []int{2, 1})
+	ParseInstructionTestHelper(t, 1203004, 4, []int{0, 3, 0, 2, 1})
+
 }
 
-func TestExecWithNoMutation(t *testing.T) {
-	stack := []int{1, 0, 0, 0, 99}
-	execWithNoMutation(stack, 0, 0)
+func ParseInstructionTestHelper(t *testing.T, x, expected_opcode int, expected_modes []int) {
+	opcode, modes := parseInstruction(x)
 
-	if !Equal(stack, []int{1, 0, 0, 0, 99}) {
-		t.Error("Exec mutates stack")
+	if !Equal(modes, expected_modes) {
+		t.Errorf("Expected %v, Got %v", expected_modes, modes)
 	}
-}
 
-func ExecTestHelper(t *testing.T, x, expected []int) {
-	ans, _ := exec(x)
-
-	if !Equal(ans, expected) {
-		t.Errorf("Expected %v, Got %v", expected, ans)
+	if opcode != expected_opcode {
+		t.Errorf("Expected %v, Got %v", expected_opcode, opcode)
 	}
 }
 
