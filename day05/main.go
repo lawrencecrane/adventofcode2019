@@ -50,7 +50,7 @@ func exec(stack []int, input int) (int, []int, error) {
 	started, _ := execStart(copied, input)
 	_, _, output, err := execHelper(started, 2, output)
 
-	if err != nil {
+	if err != nil || len(output) < 1 {
 		return 1, nil, err
 	}
 
@@ -80,6 +80,12 @@ func execHelper(stack []int, pos int, output []int) ([]int, int, []int, error) {
 	case OUTPUT:
 		output := out(stack, addTrailingZeros(modes, 1-len(modes)), output, pos)
 		return execHelper(stack, pos+2, output)
+	case JUMP_IF_TRUE:
+		pos := jump(stack, addTrailingZeros(modes, 2-len(modes)), pos, true)
+		return execHelper(stack, pos, output)
+	case JUMP_IF_FALSE:
+		pos := jump(stack, addTrailingZeros(modes, 2-len(modes)), pos, false)
+		return execHelper(stack, pos, output)
 	case HALT:
 		return stack, pos, output, nil
 	default:
@@ -87,13 +93,24 @@ func execHelper(stack []int, pos int, output []int) ([]int, int, []int, error) {
 	}
 }
 
+func jump(stack []int, modes []int, pos int, cmp bool) int {
+	f_fst, _ := modeToFunc(modes[0])
+	f_snd, _ := modeToFunc(modes[1])
+
+	if (f_fst(stack, pos+1) != 0) == cmp {
+		return f_snd(stack, pos+2)
+	}
+
+	return pos + 3
+}
+
 func calc(stack []int, modes []int, pos int, f func(int, int) int) []int {
 	f_fst, _ := modeToFunc(modes[0])
 	f_snd, _ := modeToFunc(modes[1])
+
 	res := f(f_fst(stack, pos+1), f_snd(stack, pos+2))
 
 	positionModeWrite(stack, pos+3, res)
-
 	return stack
 }
 
