@@ -86,6 +86,12 @@ func execHelper(stack []int, pos int, output []int) ([]int, int, []int, error) {
 	case JUMP_IF_FALSE:
 		pos := jump(stack, addTrailingZeros(modes, 2-len(modes)), pos, false)
 		return execHelper(stack, pos, output)
+	case LESS_THAN:
+		stack := comparison(stack, addTrailingZeros(modes, 3-len(modes)), pos, is_less)
+		return execHelper(stack, pos+4, output)
+	case EQUALS:
+		stack := comparison(stack, addTrailingZeros(modes, 3-len(modes)), pos, is_equal)
+		return execHelper(stack, pos+4, output)
 	case HALT:
 		return stack, pos, output, nil
 	default:
@@ -93,9 +99,20 @@ func execHelper(stack []int, pos int, output []int) ([]int, int, []int, error) {
 	}
 }
 
+func comparison(stack []int, modes []int, pos int, pred func(int, int) bool) []int {
+	f_fst, f_snd := pairModeToFuncs(modes[0], modes[1])
+
+	if pred(f_fst(stack, pos+1), f_snd(stack, pos+2)) {
+		positionModeWrite(stack, pos+3, 1)
+	} else {
+		positionModeWrite(stack, pos+3, 0)
+	}
+
+	return stack
+}
+
 func jump(stack []int, modes []int, pos int, cmp bool) int {
-	f_fst, _ := modeToFunc(modes[0])
-	f_snd, _ := modeToFunc(modes[1])
+	f_fst, f_snd := pairModeToFuncs(modes[0], modes[1])
 
 	if (f_fst(stack, pos+1) != 0) == cmp {
 		return f_snd(stack, pos+2)
@@ -105,8 +122,7 @@ func jump(stack []int, modes []int, pos int, cmp bool) int {
 }
 
 func calc(stack []int, modes []int, pos int, f func(int, int) int) []int {
-	f_fst, _ := modeToFunc(modes[0])
-	f_snd, _ := modeToFunc(modes[1])
+	f_fst, f_snd := pairModeToFuncs(modes[0], modes[1])
 
 	res := f(f_fst(stack, pos+1), f_snd(stack, pos+2))
 
@@ -121,12 +137,27 @@ func out(stack []int, modes []int, output []int, pos int) []int {
 	return output
 }
 
+func is_less(a, b int) bool {
+	return a < b
+}
+
+func is_equal(a, b int) bool {
+	return a == b
+}
+
 func add(a, b int) int {
 	return a + b
 }
 
 func mult(a, b int) int {
 	return a * b
+}
+
+func pairModeToFuncs(a, b int) (func([]int, int) int, func([]int, int) int) {
+	af, _ := modeToFunc(a)
+	bf, _ := modeToFunc(b)
+
+	return af, bf
 }
 
 func modeToFunc(mode int) (func([]int, int) int, error) {
