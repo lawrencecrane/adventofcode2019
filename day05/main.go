@@ -11,11 +11,15 @@ import (
 
 // Opcodes
 const (
-	ADD      = 1
-	MULTIPLY = 2
-	INPUT    = 3
-	OUTPUT   = 4
-	HALT     = 99
+	ADD           = 1
+	MULTIPLY      = 2
+	INPUT         = 3
+	OUTPUT        = 4
+	JUMP_IF_TRUE  = 5
+	JUMP_IF_FALSE = 6
+	LESS_THAN     = 7
+	EQUALS        = 8
+	HALT          = 99
 )
 
 // Modes
@@ -25,16 +29,17 @@ const (
 )
 
 func main() {
-	code, out := solveInput(loadInput())
-	fmt.Printf("Diagnostic code is %v\n", code)
-	fmt.Printf("Output is %v\n", out)
-}
+	stack := parse(split(loadInput()))
 
-func solveInput(in string) (int, []int) {
-	stack := parse(split(in))
 	code, output, _ := exec(stack, 1)
 
-	return code, output
+	fmt.Printf("Output is %v\n", output)
+	fmt.Printf("Diagnostic code is %v\n", code)
+
+	code, output, _ = exec(stack, 5)
+
+	fmt.Printf("Output is %v\n", output)
+	fmt.Printf("Diagnostic code is %v\n", code)
 }
 
 func exec(stack []int, input int) (int, []int, error) {
