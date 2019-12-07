@@ -55,38 +55,6 @@ func findMostAmplified(stack []int) (int, []int) {
 	return max, permutations[imax]
 }
 
-func permutationsHeap(xs []int) [][]int {
-	return permutationsHeapHelper(len(xs), xs, [][]int{})
-}
-
-func permutationsHeapHelper(n int, xs []int, permutations [][]int) [][]int {
-	if n == 1 {
-		tmp := make([]int, len(xs))
-		copy(tmp, xs)
-		return append(permutations, tmp)
-	}
-
-	var res [][]int
-
-	for i := 0; i < n; i++ {
-		res = append(res, permutationsHeapHelper(n-1, xs, permutations)...)
-
-		if n%2 == 0 {
-			swap(xs, i, n-1)
-		} else {
-			swap(xs, 0, n-1)
-		}
-	}
-
-	return res
-}
-
-func swap(xs []int, i, j int) {
-	tmp := xs[i]
-	xs[i] = xs[j]
-	xs[j] = tmp
-}
-
 func execCircuit(stack []int, phases []int) (int, error) {
 	input := 0
 
@@ -283,6 +251,38 @@ func positionModeRead(stack []int, pos int) int {
 
 func immediateModeRead(stack []int, pos int) int {
 	return stack[pos]
+}
+
+func permutationsHeap(xs []int) [][]int {
+	return permutationsHeapHelper(len(xs), xs, [][]int{})
+}
+
+func permutationsHeapHelper(n int, xs []int, permutations [][]int) [][]int {
+	if n == 1 {
+		tmp := make([]int, len(xs))
+		copy(tmp, xs)
+		return append(permutations, tmp)
+	}
+
+	var res [][]int
+
+	for i := 0; i < n; i++ {
+		res = append(res, permutationsHeapHelper(n-1, xs, permutations)...)
+
+		if n%2 == 0 {
+			swap(xs, i, n-1)
+		} else {
+			swap(xs, 0, n-1)
+		}
+	}
+
+	return res
+}
+
+func swap(xs []int, i, j int) {
+	tmp := xs[i]
+	xs[i] = xs[j]
+	xs[j] = tmp
 }
 
 func parse(in []string) []int {
