@@ -31,9 +31,10 @@ const (
 func main() {
 	stack := parse(split(loadInput()))
 
-	code, _ := execCircuit(stack, []int{1, 2, 3, 4})
+	signal, phase := findMostAmplified(stack)
 
-	fmt.Printf("Amplifed signal is %v\n", code)
+	fmt.Printf("Most Amplifed signal is %v\n", signal)
+	fmt.Printf("Most Amplifed phase is %v\n", phase)
 }
 
 func findMostAmplified(stack []int) (int, []int) {
