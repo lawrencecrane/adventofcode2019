@@ -44,7 +44,7 @@ func findMostAmplified(stack []int) (int, []int) {
 	permutations := permutationsHeap([]int{0, 1, 2, 3, 4})
 
 	for i, phases := range permutations {
-		output, _ := execCircuit(stack, phases)
+		output, _ := execCircuit(stack, phases, 0)
 
 		if output > max {
 			max = output
@@ -55,11 +55,16 @@ func findMostAmplified(stack []int) (int, []int) {
 	return max, permutations[imax]
 }
 
-func execCircuit(stack []int, phases []int) (int, error) {
-	input := 0
+// func execFeedbackLoop(stack []int, phases []int) (int, error) {
 
+// }
+
+func execCircuit(stack []int, phases []int, input int) (int, error) {
 	for _, phase := range phases {
-		output, _, err := exec(stack, phase, input)
+		copied := make([]int, len(stack))
+		copy(copied, stack)
+
+		output, _, err := exec(copied, []int{phase, input})
 
 		if err != nil {
 			return 1, err
@@ -71,53 +76,49 @@ func execCircuit(stack []int, phases []int) (int, error) {
 	return input, nil
 }
 
-func exec(stack []int, phase, input int) (int, []int, error) {
-	copied := make([]int, len(stack))
-	copy(copied, stack)
+func exec(stack []int, input []int) (int, bool, error) {
+	_, _, output, halted, err := execHelper(stack, 0, input)
 
-	var output []int
-	_, _, output, err := execHelper(copied, 0, []int{phase, input}, output)
-
-	if err != nil || len(output) < 1 {
-		return 1, nil, errors.New("Execution failed")
+	if err != nil {
+		return 1, false, errors.New("Execution failed")
 	}
 
-	return output[len(output)-1], output[:len(output)-1], nil
+	return output, halted, nil
 }
 
-func execHelper(stack []int, pos int, input, output []int) ([]int, int, []int, error) {
+func execHelper(stack []int, pos int, input []int) ([]int, int, int, bool, error) {
 	opcode, modes := parseInstruction(stack[pos])
 	modes = addPaddingToModes(opcode, modes)
 
 	switch opcode {
 	case ADD:
 		stack, pos := calc(stack, modes, pos, add)
-		return execHelper(stack, pos, input, output)
+		return execHelper(stack, pos, input)
 	case MULTIPLY:
 		stack, pos := calc(stack, modes, pos, mult)
-		return execHelper(stack, pos, input, output)
+		return execHelper(stack, pos, input)
 	case INPUT:
 		positionModeWrite(stack, pos+1, input[0])
-		return execHelper(stack, pos+2, input[1:], output)
+		return execHelper(stack, pos+2, input[1:])
 	case OUTPUT:
-		output, pos := out(stack, modes, output, pos)
-		return execHelper(stack, pos, input, output)
+		output, pos := out(stack, modes, pos)
+		return stack, pos, output, false, nil
 	case JUMPT:
 		pos := jump(stack, modes, pos, true)
-		return execHelper(stack, pos, input, output)
+		return execHelper(stack, pos, input)
 	case JUMPF:
 		pos := jump(stack, modes, pos, false)
-		return execHelper(stack, pos, input, output)
+		return execHelper(stack, pos, input)
 	case LESS:
 		stack, pos := comparison(stack, modes, pos, isLess)
-		return execHelper(stack, pos, input, output)
+		return execHelper(stack, pos, input)
 	case EQUALS:
 		stack, pos := comparison(stack, modes, pos, isEqual)
-		return execHelper(stack, pos, input, output)
+		return execHelper(stack, pos, input)
 	case HALT:
-		return stack, pos, output, nil
+		return stack, pos, 0, true, nil
 	default:
-		return nil, 0, output, errors.New("Cannot execute given stack")
+		return nil, 0, 1, false, errors.New("Cannot execute given stack")
 	}
 }
 
@@ -171,11 +172,9 @@ func calc(stack []int, modes []int, pos int, f func(int, int) int) ([]int, int) 
 	return stack, pos + 4
 }
 
-func out(stack []int, modes []int, output []int, pos int) ([]int, int) {
+func out(stack []int, modes []int, pos int) (int, int) {
 	fun, _ := modeToFunc(modes[0])
-
-	output = append(output, fun(stack, pos+1))
-	return output, pos + 2
+	return fun(stack, pos+1), pos + 2
 }
 
 func isLess(a, b int) bool {

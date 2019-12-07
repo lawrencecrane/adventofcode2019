@@ -57,7 +57,7 @@ func FindMostAmplifiedTestHelper(t *testing.T, stack, expectedPhase []int, expec
 }
 
 func ExecCircuitTestHelper(t *testing.T, stack, phases []int, expected int) {
-	signal, _ := execCircuit(stack, phases)
+	signal, _ := execCircuit(stack, phases, 0)
 
 	if signal != expected {
 		t.Errorf("Expected: %v, Got %v", expected, signal)
