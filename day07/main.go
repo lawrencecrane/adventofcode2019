@@ -31,26 +31,36 @@ const (
 func main() {
 	stack := parse(split(loadInput()))
 
-	code, output, _ := exec(stack, 1, 0)
+	code, _ := execCircuit(stack, []int{1, 2, 3, 4})
 
-	fmt.Printf("Output is %v\n", output)
-	fmt.Printf("Diagnostic code is %v\n", code)
-
-	code, output, _ = exec(stack, 5, 0)
-
-	fmt.Printf("Output is %v\n", output)
-	fmt.Printf("Diagnostic code is %v\n", code)
+	fmt.Printf("Amplifed signal is %v\n", code)
 }
 
-func exec(stack []int, input, phase int) (int, []int, error) {
+func execCircuit(stack []int, phases []int) (int, error) {
+	input := 0
+
+	for _, phase := range phases {
+		output, _, err := exec(stack, phase, input)
+
+		if err != nil {
+			return 1, err
+		}
+
+		input = output
+	}
+
+	return input, nil
+}
+
+func exec(stack []int, phase, input int) (int, []int, error) {
 	copied := make([]int, len(stack))
 	copy(copied, stack)
 
 	var output []int
-	_, _, output, err := execHelper(copied, 0, []int{input, phase}, output)
+	_, _, output, err := execHelper(copied, 0, []int{phase, input}, output)
 
 	if err != nil || len(output) < 1 {
-		return 1, nil, err
+		return 1, nil, errors.New("Execution failed")
 	}
 
 	return output[len(output)-1], output[:len(output)-1], nil
