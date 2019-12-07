@@ -28,6 +28,14 @@ const (
 	IMMEDIATE = 1
 )
 
+type amplifier struct {
+	addr   int
+	halted bool
+	input  []int
+	output int
+	stack  []int
+}
+
 func main() {
 	stack := parse(split(loadInput()))
 
@@ -41,14 +49,14 @@ func findMostAmplified(stack []int) (int, []int) {
 	max := 0
 	imax := 0
 
-	stacks := nCopyStack(5, stack)
 	permutations := permutationsHeap([]int{0, 1, 2, 3, 4})
 
 	for i, phases := range permutations {
-		output, _, _ := execCircuit(stacks, phases, 0)
+		amps := createAmplifiers(stack, phases)
+		executed := execCircuit(amps, 0)
 
-		if output > max {
-			max = output
+		if executed[len(executed)-1].output > max {
+			max = executed[len(executed)-1].output
 			imax = i
 		}
 	}
@@ -56,92 +64,104 @@ func findMostAmplified(stack []int) (int, []int) {
 	return max, permutations[imax]
 }
 
+func createAmplifiers(stack []int, phases []int) []amplifier {
+	amps := make([]amplifier, len(phases))
+
+	for i, phase := range phases {
+		tmp := make([]int, len(stack))
+		copy(tmp, stack)
+
+		amps[i] = amplifier{
+			addr:   0,
+			halted: false,
+			input:  []int{phase},
+			output: 0,
+			stack:  tmp,
+		}
+	}
+
+	return amps
+}
+
 // func execFeedbackLoop(stack []int, phases []int) (int, error) {
-// 	input := 0
-// 	halted := false
+// 	inputs := listeach(phases)
+// 	inputs[0] = append(inputs[0], 0)
+
 // 	stacks := nCopyStack(len(phases), stack)
 
-// 	for !halted {
-// 		execCircuit(stacks, phases, input)
+// 	for {
+// 		output, halted, err := execCircuit(stacks, inputs)
+
+// 		if err != nil {
+// 			return 1, err
+// 		}
+
+// 		if halted {
+// 			return output, nil
+// 		}
+
+// 		fmt.Println(inputs)
+
+// 		inputs = make([][]int, len(inputs))
+// 		inputs[0] = []int{output}
+
+// 		fmt.Println(inputs)
 // 	}
 
 // 	return 1, nil
 // }
 
-func nCopyStack(n int, stack []int) [][]int {
-	stacks := make([][]int, n)
+func execCircuit(amps []amplifier, input int) []amplifier {
+	for i, amp := range amps {
+		amp.input = append(amp.input, input)
+		executed, err := exec(amp)
 
-	for i := range stacks {
-		tmp := make([]int, len(stack))
-		copy(tmp, stack)
-		stacks[i] = tmp
-	}
-
-	return stacks
-}
-
-func execCircuit(stacks [][]int, phases []int, input int) (int, bool, error) {
-	for i, phase := range phases {
-		output, halted, err := exec(stacks[i], []int{phase, input})
+		amps[i] = executed
 
 		if err != nil {
-			return 1, false, err
+			return nil
 		}
 
-		if halted {
-			return output, halted, nil
+		if executed.halted {
+			return amps
 		}
 
-		input = output
+		input = executed.output
 	}
 
-	return input, false, nil
+	return amps
 }
 
-func exec(stack []int, input []int) (int, bool, error) {
-	_, _, output, halted, err := execHelper(stack, 0, input)
-
-	if err != nil {
-		return 1, false, errors.New("Execution failed")
-	}
-
-	return output, halted, nil
-}
-
-func execHelper(stack []int, pos int, input []int) ([]int, int, int, bool, error) {
-	opcode, modes := parseInstruction(stack[pos])
+func exec(amp amplifier) (amplifier, error) {
+	opcode, modes := parseInstruction(amp.stack[amp.addr])
 	modes = addPaddingToModes(opcode, modes)
 
 	switch opcode {
 	case ADD:
-		stack, pos := calc(stack, modes, pos, add)
-		return execHelper(stack, pos, input)
+		amp = calc(amp, modes, add)
 	case MULTIPLY:
-		stack, pos := calc(stack, modes, pos, mult)
-		return execHelper(stack, pos, input)
+		amp = calc(amp, modes, mult)
 	case INPUT:
-		positionModeWrite(stack, pos+1, input[0])
-		return execHelper(stack, pos+2, input[1:])
-	case OUTPUT:
-		output, pos := out(stack, modes, pos)
-		return stack, pos, output, false, nil
+		amp = read(amp)
 	case JUMPT:
-		pos := jump(stack, modes, pos, true)
-		return execHelper(stack, pos, input)
+		amp = jump(amp, modes, true)
 	case JUMPF:
-		pos := jump(stack, modes, pos, false)
-		return execHelper(stack, pos, input)
+		amp = jump(amp, modes, false)
 	case LESS:
-		stack, pos := comparison(stack, modes, pos, isLess)
-		return execHelper(stack, pos, input)
+		amp = comparison(amp, modes, isLess)
 	case EQUALS:
-		stack, pos := comparison(stack, modes, pos, isEqual)
-		return execHelper(stack, pos, input)
+		amp = comparison(amp, modes, isEqual)
+	case OUTPUT:
+		amp = out(amp, modes)
+		return amp, nil
 	case HALT:
-		return stack, pos, 0, true, nil
+		amp.halted = true
+		return amp, nil
 	default:
-		return nil, 0, 1, false, errors.New("Cannot execute given stack")
+		return amp, errors.New("Unknown opcode")
 	}
+
+	return exec(amp)
 }
 
 func addPaddingToModes(opcode int, modes []int) []int {
@@ -163,40 +183,59 @@ func addPaddingToModes(opcode int, modes []int) []int {
 	}
 }
 
-func comparison(stack []int, modes []int, pos int, pred func(int, int) bool) ([]int, int) {
+func comparison(amp amplifier, modes []int, pred func(int, int) bool) amplifier {
 	fFst, fSnd := pairModeToFuncs(modes[0], modes[1])
 
-	if pred(fFst(stack, pos+1), fSnd(stack, pos+2)) {
-		positionModeWrite(stack, pos+3, 1)
+	if pred(fFst(amp.stack, amp.addr+1), fSnd(amp.stack, amp.addr+2)) {
+		positionModeWrite(amp.stack, amp.addr+3, 1)
 	} else {
-		positionModeWrite(stack, pos+3, 0)
+		positionModeWrite(amp.stack, amp.addr+3, 0)
 	}
 
-	return stack, pos + 4
+	amp.addr += 4
+
+	return amp
 }
 
-func jump(stack []int, modes []int, pos int, cmp bool) int {
+func jump(amp amplifier, modes []int, cmp bool) amplifier {
 	fFst, fSnd := pairModeToFuncs(modes[0], modes[1])
 
-	if (fFst(stack, pos+1) != 0) == cmp {
-		return fSnd(stack, pos+2)
+	if (fFst(amp.stack, amp.addr+1) != 0) == cmp {
+		amp.addr = fSnd(amp.stack, amp.addr+2)
+	} else {
+		amp.addr += 3
 	}
 
-	return pos + 3
+	return amp
 }
 
-func calc(stack []int, modes []int, pos int, f func(int, int) int) ([]int, int) {
+func calc(amp amplifier, modes []int, f func(int, int) int) amplifier {
 	fFst, fSnd := pairModeToFuncs(modes[0], modes[1])
 
-	res := f(fFst(stack, pos+1), fSnd(stack, pos+2))
+	res := f(fFst(amp.stack, amp.addr+1), fSnd(amp.stack, amp.addr+2))
+	positionModeWrite(amp.stack, amp.addr+3, res)
 
-	positionModeWrite(stack, pos+3, res)
-	return stack, pos + 4
+	amp.addr += 4
+
+	return amp
 }
 
-func out(stack []int, modes []int, pos int) (int, int) {
+func out(amp amplifier, modes []int) amplifier {
 	fun, _ := modeToFunc(modes[0])
-	return fun(stack, pos+1), pos + 2
+
+	amp.output = fun(amp.stack, amp.addr+1)
+	amp.addr += 2
+
+	return amp
+}
+
+func read(amp amplifier) amplifier {
+	positionModeWrite(amp.stack, amp.addr+1, amp.input[0])
+
+	amp.input = amp.input[1:]
+	amp.addr += 2
+
+	return amp
 }
 
 func isLess(a, b int) bool {
