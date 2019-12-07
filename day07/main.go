@@ -41,10 +41,11 @@ func findMostAmplified(stack []int) (int, []int) {
 	max := 0
 	imax := 0
 
+	stacks := nCopyStack(5, stack)
 	permutations := permutationsHeap([]int{0, 1, 2, 3, 4})
 
 	for i, phases := range permutations {
-		output, _ := execCircuit(stack, phases, 0)
+		output, _, _ := execCircuit(stacks, phases, 0)
 
 		if output > max {
 			max = output
@@ -56,24 +57,45 @@ func findMostAmplified(stack []int) (int, []int) {
 }
 
 // func execFeedbackLoop(stack []int, phases []int) (int, error) {
+// 	input := 0
+// 	halted := false
+// 	stacks := nCopyStack(len(phases), stack)
 
+// 	for !halted {
+// 		execCircuit(stacks, phases, input)
+// 	}
+
+// 	return 1, nil
 // }
 
-func execCircuit(stack []int, phases []int, input int) (int, error) {
-	for _, phase := range phases {
-		copied := make([]int, len(stack))
-		copy(copied, stack)
+func nCopyStack(n int, stack []int) [][]int {
+	stacks := make([][]int, n)
 
-		output, _, err := exec(copied, []int{phase, input})
+	for i := range stacks {
+		tmp := make([]int, len(stack))
+		copy(tmp, stack)
+		stacks[i] = tmp
+	}
+
+	return stacks
+}
+
+func execCircuit(stacks [][]int, phases []int, input int) (int, bool, error) {
+	for i, phase := range phases {
+		output, halted, err := exec(stacks[i], []int{phase, input})
 
 		if err != nil {
-			return 1, err
+			return 1, false, err
+		}
+
+		if halted {
+			return output, halted, nil
 		}
 
 		input = output
 	}
 
-	return input, nil
+	return input, false, nil
 }
 
 func exec(stack []int, input []int) (int, bool, error) {
