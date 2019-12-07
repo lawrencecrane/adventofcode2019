@@ -10,15 +10,15 @@ func TestParseInstruction(t *testing.T) {
 
 }
 
-func ParseInstructionTestHelper(t *testing.T, x, expected_opcode int, expected_modes []int) {
+func ParseInstructionTestHelper(t *testing.T, x, expectedOpcode int, expectedModes []int) {
 	opcode, modes := parseInstruction(x)
 
-	if !Equal(modes, expected_modes) {
-		t.Errorf("Expected %v, Got %v", expected_modes, modes)
+	if !Equal(modes, expectedModes) {
+		t.Errorf("Expected %v, Got %v", expectedModes, modes)
 	}
 
-	if opcode != expected_opcode {
-		t.Errorf("Expected %v, Got %v", expected_opcode, opcode)
+	if opcode != expectedOpcode {
+		t.Errorf("Expected %v, Got %v", expectedOpcode, opcode)
 	}
 }
 

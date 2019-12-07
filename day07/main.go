@@ -31,24 +31,23 @@ const (
 func main() {
 	stack := parse(split(loadInput()))
 
-	code, output, _ := exec(stack, 1)
+	code, output, _ := exec(stack, 1, 0)
 
 	fmt.Printf("Output is %v\n", output)
 	fmt.Printf("Diagnostic code is %v\n", code)
 
-	code, output, _ = exec(stack, 5)
+	code, output, _ = exec(stack, 5, 0)
 
 	fmt.Printf("Output is %v\n", output)
 	fmt.Printf("Diagnostic code is %v\n", code)
 }
 
-func exec(stack []int, input int) (int, []int, error) {
+func exec(stack []int, input, phase int) (int, []int, error) {
 	copied := make([]int, len(stack))
 	copy(copied, stack)
 
 	var output []int
-	started, _ := execStart(copied, input)
-	_, _, output, err := execHelper(started, 2, output)
+	_, _, output, err := execHelper(copied, 0, []int{input, phase}, output)
 
 	if err != nil || len(output) < 1 {
 		return 1, nil, err
@@ -57,41 +56,34 @@ func exec(stack []int, input int) (int, []int, error) {
 	return output[len(output)-1], output[:len(output)-1], nil
 }
 
-func execStart(stack []int, input int) ([]int, error) {
-	switch stack[0] {
-	case INPUT:
-		positionModeWrite(stack, 1, input)
-		return stack, nil
-	default:
-		return nil, errors.New("Cannot start execution")
-	}
-}
-
-func execHelper(stack []int, pos int, output []int) ([]int, int, []int, error) {
+func execHelper(stack []int, pos int, input, output []int) ([]int, int, []int, error) {
 	opcode, modes := parseInstruction(stack[pos])
 
 	switch opcode {
 	case ADD:
 		stack := calc(stack, addTrailingZeros(modes, 3-len(modes)), pos, add)
-		return execHelper(stack, pos+4, output)
+		return execHelper(stack, pos+4, input, output)
 	case MULTIPLY:
 		stack := calc(stack, addTrailingZeros(modes, 3-len(modes)), pos, mult)
-		return execHelper(stack, pos+4, output)
+		return execHelper(stack, pos+4, input, output)
+	case INPUT:
+		positionModeWrite(stack, pos+1, input[0])
+		return execHelper(stack, pos+2, input[1:], output)
 	case OUTPUT:
 		output := out(stack, addTrailingZeros(modes, 1-len(modes)), output, pos)
-		return execHelper(stack, pos+2, output)
+		return execHelper(stack, pos+2, input, output)
 	case JUMPT:
 		pos := jump(stack, addTrailingZeros(modes, 2-len(modes)), pos, true)
-		return execHelper(stack, pos, output)
+		return execHelper(stack, pos, input, output)
 	case JUMPF:
 		pos := jump(stack, addTrailingZeros(modes, 2-len(modes)), pos, false)
-		return execHelper(stack, pos, output)
+		return execHelper(stack, pos, input, output)
 	case LESS:
 		stack := comparison(stack, addTrailingZeros(modes, 3-len(modes)), pos, isLess)
-		return execHelper(stack, pos+4, output)
+		return execHelper(stack, pos+4, input, output)
 	case EQUALS:
 		stack := comparison(stack, addTrailingZeros(modes, 3-len(modes)), pos, isEqual)
-		return execHelper(stack, pos+4, output)
+		return execHelper(stack, pos+4, input, output)
 	case HALT:
 		return stack, pos, output, nil
 	default:
