@@ -58,32 +58,33 @@ func exec(stack []int, input, phase int) (int, []int, error) {
 
 func execHelper(stack []int, pos int, input, output []int) ([]int, int, []int, error) {
 	opcode, modes := parseInstruction(stack[pos])
+	modes = addPaddingToModes(opcode, modes)
 
 	switch opcode {
 	case ADD:
-		stack := calc(stack, addTrailingZeros(modes, 3-len(modes)), pos, add)
-		return execHelper(stack, pos+4, input, output)
+		stack, pos := calc(stack, modes, pos, add)
+		return execHelper(stack, pos, input, output)
 	case MULTIPLY:
-		stack := calc(stack, addTrailingZeros(modes, 3-len(modes)), pos, mult)
-		return execHelper(stack, pos+4, input, output)
+		stack, pos := calc(stack, modes, pos, mult)
+		return execHelper(stack, pos, input, output)
 	case INPUT:
 		positionModeWrite(stack, pos+1, input[0])
 		return execHelper(stack, pos+2, input[1:], output)
 	case OUTPUT:
-		output := out(stack, addTrailingZeros(modes, 1-len(modes)), output, pos)
-		return execHelper(stack, pos+2, input, output)
+		output, pos := out(stack, modes, output, pos)
+		return execHelper(stack, pos, input, output)
 	case JUMPT:
-		pos := jump(stack, addTrailingZeros(modes, 2-len(modes)), pos, true)
+		pos := jump(stack, modes, pos, true)
 		return execHelper(stack, pos, input, output)
 	case JUMPF:
-		pos := jump(stack, addTrailingZeros(modes, 2-len(modes)), pos, false)
+		pos := jump(stack, modes, pos, false)
 		return execHelper(stack, pos, input, output)
 	case LESS:
-		stack := comparison(stack, addTrailingZeros(modes, 3-len(modes)), pos, isLess)
-		return execHelper(stack, pos+4, input, output)
+		stack, pos := comparison(stack, modes, pos, isLess)
+		return execHelper(stack, pos, input, output)
 	case EQUALS:
-		stack := comparison(stack, addTrailingZeros(modes, 3-len(modes)), pos, isEqual)
-		return execHelper(stack, pos+4, input, output)
+		stack, pos := comparison(stack, modes, pos, isEqual)
+		return execHelper(stack, pos, input, output)
 	case HALT:
 		return stack, pos, output, nil
 	default:
@@ -91,7 +92,26 @@ func execHelper(stack []int, pos int, input, output []int) ([]int, int, []int, e
 	}
 }
 
-func comparison(stack []int, modes []int, pos int, pred func(int, int) bool) []int {
+func addPaddingToModes(opcode int, modes []int) []int {
+	switch opcode {
+	case
+		ADD,
+		MULTIPLY,
+		LESS,
+		EQUALS:
+		return addTrailingZeros(modes, 3-len(modes))
+	case
+		JUMPT,
+		JUMPF:
+		return addTrailingZeros(modes, 2-len(modes))
+	case OUTPUT:
+		return addTrailingZeros(modes, 1-len(modes))
+	default:
+		return modes
+	}
+}
+
+func comparison(stack []int, modes []int, pos int, pred func(int, int) bool) ([]int, int) {
 	fFst, fSnd := pairModeToFuncs(modes[0], modes[1])
 
 	if pred(fFst(stack, pos+1), fSnd(stack, pos+2)) {
@@ -100,7 +120,7 @@ func comparison(stack []int, modes []int, pos int, pred func(int, int) bool) []i
 		positionModeWrite(stack, pos+3, 0)
 	}
 
-	return stack
+	return stack, pos + 4
 }
 
 func jump(stack []int, modes []int, pos int, cmp bool) int {
@@ -113,20 +133,20 @@ func jump(stack []int, modes []int, pos int, cmp bool) int {
 	return pos + 3
 }
 
-func calc(stack []int, modes []int, pos int, f func(int, int) int) []int {
+func calc(stack []int, modes []int, pos int, f func(int, int) int) ([]int, int) {
 	fFst, fSnd := pairModeToFuncs(modes[0], modes[1])
 
 	res := f(fFst(stack, pos+1), fSnd(stack, pos+2))
 
 	positionModeWrite(stack, pos+3, res)
-	return stack
+	return stack, pos + 4
 }
 
-func out(stack []int, modes []int, output []int, pos int) []int {
+func out(stack []int, modes []int, output []int, pos int) ([]int, int) {
 	fun, _ := modeToFunc(modes[0])
 
 	output = append(output, fun(stack, pos+1))
-	return output
+	return output, pos + 2
 }
 
 func isLess(a, b int) bool {
