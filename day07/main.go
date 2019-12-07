@@ -39,21 +39,32 @@ type amplifier struct {
 func main() {
 	stack := parse(split(loadInput()))
 
-	signal, phase := findMostAmplified(stack)
+	signal, phase := findMostAmplified(stack,
+		execCircuit,
+		[]int{0, 1, 2, 3, 4})
 
 	fmt.Printf("Most Amplifed signal is %v\n", signal)
 	fmt.Printf("Most Amplifed phase is %v\n", phase)
+
+	signal2, phase2 := findMostAmplified(stack,
+		execFeedbackLoop,
+		[]int{5, 6, 7, 8, 9})
+
+	fmt.Printf("Most Amplifed feedbacked signal is %v\n", signal2)
+	fmt.Printf("Most Amplifed feedbacked phase is %v\n", phase2)
 }
 
-func findMostAmplified(stack []int) (int, []int) {
+func findMostAmplified(stack []int,
+	fun func([]amplifier, int) ([]amplifier, bool),
+	phaseValues []int) (int, []int) {
 	max := 0
 	imax := 0
 
-	permutations := permutationsHeap([]int{0, 1, 2, 3, 4})
+	permutations := permutationsHeap(phaseValues)
 
 	for i, phases := range permutations {
 		amps := createAmplifiers(stack, phases)
-		executed, _ := execCircuit(amps, 0)
+		executed, _ := fun(amps, 0)
 
 		if executed[len(executed)-1].output > max {
 			max = executed[len(executed)-1].output
