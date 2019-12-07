@@ -59,7 +59,9 @@ func TestParseInstruction(t *testing.T) {
 
 func ExecFeedbackLoopTestHelper(t *testing.T, stack, phases []int, expected int) {
 	amps := createAmplifiers(stack, phases)
-	signal := execFeedbackLoop(amps, 0)
+	executed, _ := execFeedbackLoop(amps, 0)
+
+	signal := executed[len(executed)-1].output
 
 	if signal != expected {
 		t.Errorf("Expected: %v, Got %v", expected, signal)

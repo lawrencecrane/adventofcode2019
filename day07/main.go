@@ -83,19 +83,19 @@ func createAmplifiers(stack []int, phases []int) []amplifier {
 	return amps
 }
 
-func execFeedbackLoop(amps []amplifier, input int) int {
+func execFeedbackLoop(amps []amplifier, input int) ([]amplifier, bool) {
 	for {
 		executed, halted := execCircuit(amps, input)
 
 		if halted {
-			return executed[len(executed)-1].output
+			return executed, true
 		}
 
 		amps = executed
 		input = executed[len(executed)-1].output
 	}
 
-	return 1
+	return amps, false
 }
 
 func execCircuit(amps []amplifier, input int) ([]amplifier, bool) {
