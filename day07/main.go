@@ -53,7 +53,7 @@ func findMostAmplified(stack []int) (int, []int) {
 
 	for i, phases := range permutations {
 		amps := createAmplifiers(stack, phases)
-		executed := execCircuit(amps, 0)
+		executed, _ := execCircuit(amps, 0)
 
 		if executed[len(executed)-1].output > max {
 			max = executed[len(executed)-1].output
@@ -83,35 +83,22 @@ func createAmplifiers(stack []int, phases []int) []amplifier {
 	return amps
 }
 
-// func execFeedbackLoop(stack []int, phases []int) (int, error) {
-// 	inputs := listeach(phases)
-// 	inputs[0] = append(inputs[0], 0)
+func execFeedbackLoop(amps []amplifier, input int) int {
+	for {
+		executed, halted := execCircuit(amps, input)
 
-// 	stacks := nCopyStack(len(phases), stack)
+		if halted {
+			return executed[len(executed)-1].output
+		}
 
-// 	for {
-// 		output, halted, err := execCircuit(stacks, inputs)
+		amps = executed
+		input = executed[len(executed)-1].output
+	}
 
-// 		if err != nil {
-// 			return 1, err
-// 		}
+	return 1
+}
 
-// 		if halted {
-// 			return output, nil
-// 		}
-
-// 		fmt.Println(inputs)
-
-// 		inputs = make([][]int, len(inputs))
-// 		inputs[0] = []int{output}
-
-// 		fmt.Println(inputs)
-// 	}
-
-// 	return 1, nil
-// }
-
-func execCircuit(amps []amplifier, input int) []amplifier {
+func execCircuit(amps []amplifier, input int) ([]amplifier, bool) {
 	for i, amp := range amps {
 		amp.input = append(amp.input, input)
 		executed, err := exec(amp)
@@ -119,17 +106,17 @@ func execCircuit(amps []amplifier, input int) []amplifier {
 		amps[i] = executed
 
 		if err != nil {
-			return nil
+			return nil, false
 		}
 
 		if executed.halted {
-			return amps
+			return amps, true
 		}
 
 		input = executed.output
 	}
 
-	return amps
+	return amps, false
 }
 
 func exec(amp amplifier) (amplifier, error) {
