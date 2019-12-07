@@ -36,9 +36,23 @@ func main() {
 	fmt.Printf("Amplifed signal is %v\n", code)
 }
 
-// func findMostAmplified(stack []int) int {
+func findMostAmplified(stack []int) (int, []int) {
+	max := 0
+	imax := 0
 
-// }
+	permutations := permutationsHeap([]int{0, 1, 2, 3, 4})
+
+	for i, phases := range permutations {
+		output, _ := execCircuit(stack, phases)
+
+		if output > max {
+			max = output
+			imax = i
+		}
+	}
+
+	return max, permutations[imax]
+}
 
 func permutationsHeap(xs []int) [][]int {
 	return permutationsHeapHelper(len(xs), xs, [][]int{})
