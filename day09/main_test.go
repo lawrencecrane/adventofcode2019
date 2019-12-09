@@ -4,6 +4,17 @@ import (
 	"testing"
 )
 
+func TestExec(t *testing.T) {
+	ExecTestHelper(t, []int{104, 1125899906842624, 99}, []int{1125899906842624})
+
+	ExecTestHelper(t, []int{1102, 34915192, 34915192, 7, 4, 7, 99, 0}, []int{1219070632396864})
+
+	stack := []int{109, 1, 204, -1, 1001, 100, 1, 100, 1008, 100, 16, 101, 1006, 101, 0, 99}
+	expected := []int{1001, 100, 1, 100, 1008, 100, 16, 101, 1006, 101, 0, 99}
+
+	ExecTestHelper(t, stack, expected)
+}
+
 func TestFindMostAmplfied(t *testing.T) {
 	FindMostAmplifiedTestHelper(t,
 		execCircuit,
@@ -126,6 +137,30 @@ func ParseInstructionTestHelper(t *testing.T, x, expectedOpcode int, expectedMod
 
 	if opcode != expectedOpcode {
 		t.Errorf("Expected %v, Got %v", expectedOpcode, opcode)
+	}
+}
+
+func ExecTestHelper(t *testing.T, stack, expected []int) {
+	amp := amplifier{
+		addr:   0,
+		base:   0,
+		halted: false,
+		input:  []int{},
+		output: 0,
+		stack:  stack,
+		size:   len(stack),
+		memory: make(map[int]int),
+	}
+
+	var output []int
+
+	for range expected {
+		amp, _ = exec(amp)
+		output = append(output, amp.output)
+	}
+
+	if !Equal(output, expected) {
+		t.Errorf("Expected %v, Got %v", expected, output)
 	}
 }
 

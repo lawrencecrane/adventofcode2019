@@ -37,6 +37,8 @@ type amplifier struct {
 	input  []int
 	output int
 	stack  []int
+	size   int
+	memory map[int]int
 }
 
 func main() {
@@ -92,6 +94,8 @@ func createAmplifiers(stack []int, phases []int) []amplifier {
 			input:  []int{phase},
 			output: 0,
 			stack:  tmp,
+			size:   len(tmp),
+			memory: make(map[int]int),
 		}
 	}
 
@@ -321,25 +325,42 @@ func parseModes(x int) []int {
 }
 
 func relativeModeWrite(amp amplifier, offset, value int) amplifier {
-	amp.stack[amp.base+amp.addr] = value
-	return amp
+	return safeWrite(amp, amp.base+amp.addr, value)
 }
 
 func positionModeWrite(amp amplifier, offset, value int) amplifier {
-	amp.stack[immediateModeRead(amp, offset)] = value
+	return safeWrite(amp, immediateModeRead(amp, offset), value)
+}
+
+func safeWrite(amp amplifier, addr, value int) amplifier {
+	if addr >= amp.size {
+		amp.memory[addr-amp.size] = value
+	} else {
+		amp.stack[addr] = value
+	}
+
 	return amp
 }
 
 func relativeModeRead(amp amplifier, offset int) int {
-	return amp.stack[amp.base+amp.addr+offset]
+	return safeRead(amp, amp.base+amp.addr+offset)
 }
 
 func positionModeRead(amp amplifier, offset int) int {
-	return amp.stack[immediateModeRead(amp, offset)]
+	addr := immediateModeRead(amp, offset)
+	return safeRead(amp, addr)
 }
 
 func immediateModeRead(amp amplifier, offset int) int {
-	return amp.stack[amp.addr+offset]
+	return safeRead(amp, amp.addr+offset)
+}
+
+func safeRead(amp amplifier, addr int) int {
+	if addr >= amp.size {
+		return amp.memory[addr-amp.size]
+	}
+
+	return amp.stack[addr]
 }
 
 func permutationsHeap(xs []int) [][]int {
