@@ -19,6 +19,7 @@ const (
 	JUMPF    = 6
 	LESS     = 7
 	EQUALS   = 8
+	ADJUST   = 9
 	HALT     = 99
 )
 
@@ -149,6 +150,8 @@ func exec(amp amplifier) (amplifier, error) {
 		amp = jump(amp, modes, true)
 	case JUMPF:
 		amp = jump(amp, modes, false)
+	case ADJUST:
+		amp = adjust(amp)
 	case INPUT:
 		amp = read(amp, modes)
 	case OUTPUT:
@@ -162,6 +165,13 @@ func exec(amp amplifier) (amplifier, error) {
 	}
 
 	return exec(amp)
+}
+
+func adjust(amp amplifier) amplifier {
+	amp.base += amp.stack[amp.addr+1]
+	amp.addr += 2
+
+	return amp
 }
 
 func jump(amp amplifier, modes []int, cmp bool) amplifier {
@@ -283,7 +293,8 @@ func addPaddingToModes(opcode int, modes []int) []int {
 		return addTrailingZeros(modes, 2-len(modes))
 	case
 		INPUT,
-		OUTPUT:
+		OUTPUT,
+		ADJUST:
 		return addTrailingZeros(modes, 1-len(modes))
 	default:
 		return modes
