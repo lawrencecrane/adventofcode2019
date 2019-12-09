@@ -26,10 +26,12 @@ const (
 const (
 	POSITION  = 0
 	IMMEDIATE = 1
+	RELATIVE  = 2
 )
 
 type amplifier struct {
 	addr   int
+	base   int
 	halted bool
 	input  []int
 	output int
@@ -84,6 +86,7 @@ func createAmplifiers(stack []int, phases []int) []amplifier {
 
 		amps[i] = amplifier{
 			addr:   0,
+			base:   0,
 			halted: false,
 			input:  []int{phase},
 			output: 0,
@@ -147,7 +150,7 @@ func exec(amp amplifier) (amplifier, error) {
 	case JUMPF:
 		amp = jump(amp, modes, false)
 	case INPUT:
-		amp = read(amp)
+		amp = read(amp, modes)
 	case OUTPUT:
 		amp = out(amp, modes)
 		return amp, nil
@@ -164,8 +167,8 @@ func exec(amp amplifier) (amplifier, error) {
 func jump(amp amplifier, modes []int, cmp bool) amplifier {
 	fFst, fSnd := pairModeToFuncs(modes[0], modes[1])
 
-	if (fFst(amp.stack, amp.addr+1) != 0) == cmp {
-		amp.addr = fSnd(amp.stack, amp.addr+2)
+	if (fFst(amp, 1) != 0) == cmp {
+		amp.addr = fSnd(amp, 2)
 	} else {
 		amp.addr += 3
 	}
@@ -175,27 +178,27 @@ func jump(amp amplifier, modes []int, cmp bool) amplifier {
 
 func calc(amp amplifier, modes []int, f func(int, int) int) amplifier {
 	fFst, fSnd := pairModeToFuncs(modes[0], modes[1])
+	fWrite, _ := modeToWriteFunc(modes[2])
 
-	res := f(fFst(amp.stack, amp.addr+1), fSnd(amp.stack, amp.addr+2))
-	positionModeWrite(amp.stack, amp.addr+3, res)
-
+	amp = fWrite(amp, 3, f(fFst(amp, 1), fSnd(amp, 2)))
 	amp.addr += 4
 
 	return amp
 }
 
 func out(amp amplifier, modes []int) amplifier {
-	fun, _ := modeToFunc(modes[0])
+	fun, _ := modeToReadFunc(modes[0])
 
-	amp.output = fun(amp.stack, amp.addr+1)
+	amp.output = fun(amp, 1)
 	amp.addr += 2
 
 	return amp
 }
 
-func read(amp amplifier) amplifier {
-	positionModeWrite(amp.stack, amp.addr+1, amp.input[0])
+func read(amp amplifier, modes []int) amplifier {
+	fun, _ := modeToWriteFunc(modes[0])
 
+	amp = fun(amp, 1, amp.input[0])
 	amp.input = amp.input[1:]
 	amp.addr += 2
 
@@ -226,19 +229,32 @@ func mult(a, b int) int {
 	return a * b
 }
 
-func pairModeToFuncs(a, b int) (func([]int, int) int, func([]int, int) int) {
-	af, _ := modeToFunc(a)
-	bf, _ := modeToFunc(b)
+func pairModeToFuncs(a, b int) (func(amplifier, int) int, func(amplifier, int) int) {
+	af, _ := modeToReadFunc(a)
+	bf, _ := modeToReadFunc(b)
 
 	return af, bf
 }
 
-func modeToFunc(mode int) (func([]int, int) int, error) {
+func modeToWriteFunc(mode int) (func(amplifier, int, int) amplifier, error) {
+	switch mode {
+	case POSITION:
+		return positionModeWrite, nil
+	case RELATIVE:
+		return relativeModeWrite, nil
+	default:
+		return nil, errors.New("Unknown mode")
+	}
+}
+
+func modeToReadFunc(mode int) (func(amplifier, int) int, error) {
 	switch mode {
 	case POSITION:
 		return positionModeRead, nil
 	case IMMEDIATE:
 		return immediateModeRead, nil
+	case RELATIVE:
+		return relativeModeRead, nil
 	default:
 		return nil, errors.New("Unknown mode")
 	}
@@ -265,7 +281,9 @@ func addPaddingToModes(opcode int, modes []int) []int {
 		JUMPT,
 		JUMPF:
 		return addTrailingZeros(modes, 2-len(modes))
-	case OUTPUT:
+	case
+		INPUT,
+		OUTPUT:
 		return addTrailingZeros(modes, 1-len(modes))
 	default:
 		return modes
@@ -291,16 +309,26 @@ func parseModes(x int) []int {
 	return modes
 }
 
-func positionModeWrite(stack []int, pos, value int) {
-	stack[immediateModeRead(stack, pos)] = value
+func relativeModeWrite(amp amplifier, offset, value int) amplifier {
+	amp.stack[amp.base+amp.addr] = value
+	return amp
 }
 
-func positionModeRead(stack []int, pos int) int {
-	return stack[immediateModeRead(stack, pos)]
+func positionModeWrite(amp amplifier, offset, value int) amplifier {
+	amp.stack[immediateModeRead(amp, offset)] = value
+	return amp
 }
 
-func immediateModeRead(stack []int, pos int) int {
-	return stack[pos]
+func relativeModeRead(amp amplifier, offset int) int {
+	return amp.stack[amp.base+amp.addr+offset]
+}
+
+func positionModeRead(amp amplifier, offset int) int {
+	return amp.stack[immediateModeRead(amp, offset)]
+}
+
+func immediateModeRead(amp amplifier, offset int) int {
+	return amp.stack[amp.addr+offset]
 }
 
 func permutationsHeap(xs []int) [][]int {
