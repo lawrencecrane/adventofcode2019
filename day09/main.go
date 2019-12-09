@@ -44,22 +44,19 @@ type amplifier struct {
 func main() {
 	stack := parse(split(loadInput()))
 
-	amp := amplifier{
-		addr:   0,
-		base:   0,
-		halted: false,
-		input:  []int{1},
-		output: 0,
-		stack:  stack,
-		size:   len(stack),
-		memory: make(map[int]int),
-	}
+	fmt.Printf("BOOST keycode is %v\n",
+		executeToHalt(createAmplifier(stack, []int{1})))
 
+	fmt.Printf("Distress signal is %v\n",
+		executeToHalt(createAmplifier(stack, []int{2})))
+}
+
+func executeToHalt(amp amplifier) int {
 	for !amp.halted {
 		amp, _ = exec(amp)
 	}
 
-	fmt.Printf("BOOST keycode is %v\n", amp.output)
+	return amp.output
 }
 
 func findMostAmplified(stack []int,
@@ -87,22 +84,28 @@ func createAmplifiers(stack []int, phases []int) []amplifier {
 	amps := make([]amplifier, len(phases))
 
 	for i, phase := range phases {
-		tmp := make([]int, len(stack))
-		copy(tmp, stack)
-
-		amps[i] = amplifier{
-			addr:   0,
-			base:   0,
-			halted: false,
-			input:  []int{phase},
-			output: 0,
-			stack:  tmp,
-			size:   len(tmp),
-			memory: make(map[int]int),
-		}
+		amps[i] = createAmplifier(stack, []int{phase})
 	}
 
 	return amps
+}
+
+func createAmplifier(stack []int, input []int) amplifier {
+	tmp := make([]int, len(stack))
+	copy(tmp, stack)
+
+	amp := amplifier{
+		addr:   0,
+		base:   0,
+		halted: false,
+		input:  input,
+		output: 0,
+		stack:  tmp,
+		size:   len(tmp),
+		memory: make(map[int]int),
+	}
+
+	return amp
 }
 
 func execFeedbackLoop(amps []amplifier, input int) ([]amplifier, bool) {
