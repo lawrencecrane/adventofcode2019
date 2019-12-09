@@ -44,19 +44,22 @@ type amplifier struct {
 func main() {
 	stack := parse(split(loadInput()))
 
-	signal, phase := findMostAmplified(stack,
-		execCircuit,
-		[]int{0, 1, 2, 3, 4})
+	amp := amplifier{
+		addr:   0,
+		base:   0,
+		halted: false,
+		input:  []int{1},
+		output: 0,
+		stack:  stack,
+		size:   len(stack),
+		memory: make(map[int]int),
+	}
 
-	fmt.Printf("Most Amplifed signal is %v\n", signal)
-	fmt.Printf("Most Amplifed phase is %v\n", phase)
+	for !amp.halted {
+		amp, _ = exec(amp)
+	}
 
-	signal2, phase2 := findMostAmplified(stack,
-		execFeedbackLoop,
-		[]int{5, 6, 7, 8, 9})
-
-	fmt.Printf("Most Amplifed feedbacked signal is %v\n", signal2)
-	fmt.Printf("Most Amplifed feedbacked phase is %v\n", phase2)
+	fmt.Printf("BOOST keycode is %v\n", amp.output)
 }
 
 func findMostAmplified(stack []int,
@@ -155,7 +158,7 @@ func exec(amp amplifier) (amplifier, error) {
 	case JUMPF:
 		amp = jump(amp, modes, false)
 	case ADJUST:
-		amp = adjust(amp)
+		amp = adjust(amp, modes)
 	case INPUT:
 		amp = read(amp, modes)
 	case OUTPUT:
@@ -171,8 +174,10 @@ func exec(amp amplifier) (amplifier, error) {
 	return exec(amp)
 }
 
-func adjust(amp amplifier) amplifier {
-	amp.base += amp.stack[amp.addr+1]
+func adjust(amp amplifier, modes []int) amplifier {
+	f, _ := modeToReadFunc(modes[0])
+
+	amp.base += f(amp, 1)
 	amp.addr += 2
 
 	return amp
@@ -325,7 +330,7 @@ func parseModes(x int) []int {
 }
 
 func relativeModeWrite(amp amplifier, offset, value int) amplifier {
-	return safeWrite(amp, amp.base+amp.addr, value)
+	return safeWrite(amp, amp.base+immediateModeRead(amp, offset), value)
 }
 
 func positionModeWrite(amp amplifier, offset, value int) amplifier {
@@ -343,12 +348,11 @@ func safeWrite(amp amplifier, addr, value int) amplifier {
 }
 
 func relativeModeRead(amp amplifier, offset int) int {
-	return safeRead(amp, amp.base+amp.addr+offset)
+	return safeRead(amp, amp.base+immediateModeRead(amp, offset))
 }
 
 func positionModeRead(amp amplifier, offset int) int {
-	addr := immediateModeRead(amp, offset)
-	return safeRead(amp, addr)
+	return safeRead(amp, immediateModeRead(amp, offset))
 }
 
 func immediateModeRead(amp amplifier, offset int) int {
